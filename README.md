@@ -4,6 +4,12 @@
 
 AutoEnchant is a client-only mod that adds a small control bar to the vanilla enchantment-table screen. It can rapidly enchant every matching, enchantable item in the player's inventory while still using vanilla server-validated inventory actions, XP costs, lapis costs, offers, and enchantment results.
 
+## Preview
+
+![AutoEnchant gameplay preview](docs/autoenchant-preview.gif)
+
+[Watch the original video](https://github.com/bomxacalaka/AutoEnchant/releases/download/v1.0.0/autoenchant-demo.mp4)
+
 ## Controls
 
 - **Item icon:** click it, then click the enchantable item you want directly in your inventory. Right-click cancels selection.
