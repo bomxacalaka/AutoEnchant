@@ -10,6 +10,21 @@ AutoEnchant is a client-only mod that adds a small control bar to the vanilla en
 
 [Watch the original video](https://github.com/bomxacalaka/AutoEnchant/releases/download/v1.0.0/autoenchant-demo.mp4)
 
+## Supported Versions
+
+| Minecraft | Loader | Java |
+|---|---|---:|
+| 1.20.1 | Forge | 17 |
+| 1.20.4 | NeoForge | 17 |
+| 1.20.6 | NeoForge | 21 |
+| 1.21.1 | NeoForge | 21 |
+| 1.21.4 | NeoForge | 21 |
+| 1.21.8 | NeoForge | 21 |
+| 1.21.11 | NeoForge | 21 |
+| 26.1.2 | NeoForge | 25 |
+
+Download the JAR matching your exact Minecraft version and loader from the [latest release](https://github.com/bomxacalaka/AutoEnchant/releases/latest).
+
 ## Controls
 
 - **Item icon:** click it, then click the enchantable item you want directly in your inventory. Right-click cancels selection.
