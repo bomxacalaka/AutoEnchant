@@ -22,17 +22,15 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.TickEvent;
 import net.neoforged.neoforge.client.event.ContainerScreenEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.common.NeoForge;
 import org.lwjgl.glfw.GLFW;
 
-@Mod(value = AutoEnchant.MODID, dist = Dist.CLIENT)
+@Mod(AutoEnchant.MODID)
 public final class AutoEnchantClient {
     private static final int BAR_WIDTH = 164;
     private static final int STATUS_WIDTH = 212;
@@ -58,8 +56,7 @@ public final class AutoEnchantClient {
     private static Component status = Component.empty();
 
     public AutoEnchantClient(IEventBus modBus, ModContainer container) {
-        container.registerConfig(ModConfig.Type.CLIENT, Config.SPEC);
-        container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        net.neoforged.fml.ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, Config.SPEC);
         modBus.addListener(ClientEvents::onRegisterKeyMappings);
         NeoForge.EVENT_BUS.register(ClientEvents.class);
     }
@@ -288,8 +285,10 @@ public final class AutoEnchantClient {
         }
 
         @SubscribeEvent
-        public static void onClientTick(ClientTickEvent.Post event) {
-            tickAutomation();
+        public static void onClientTick(TickEvent.ClientTickEvent event) {
+            if (event.phase == TickEvent.Phase.END) {
+                tickAutomation();
+            }
         }
     }
 
