@@ -9,8 +9,8 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.EnchantmentScreen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.EnchantmentMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
@@ -39,9 +39,11 @@ public final class AutoEnchantClient {
     private static final int STATUS_HEIGHT = 32;
     private static final int ACTION_DELAY_TICKS = 1;
     private static final int OFFER_WAIT_TICKS = 20;
+    private static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(
+            Identifier.fromNamespaceAndPath(AutoEnchant.MODID, "controls"));
     private static final KeyMapping TOGGLE_UI_KEY = new KeyMapping(
             "key.autoenchant.toggle_ui", KeyConflictContext.GUI, InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_U, "key.categories.autoenchant");
+            GLFW.GLFW_KEY_U, KEY_CATEGORY);
 
     private static Button itemButton;
     private static Button levelButton;
@@ -119,7 +121,7 @@ public final class AutoEnchantClient {
         @SubscribeEvent
         public static void onKeyPressed(ScreenEvent.KeyPressed.Pre event) {
             if (!(event.getScreen() instanceof EnchantmentScreen)
-                    || !TOGGLE_UI_KEY.isActiveAndMatches(InputConstants.getKey(event.getKeyCode(), event.getScanCode()))) {
+                    || !TOGGLE_UI_KEY.isActiveAndMatches(InputConstants.getKey(event.getKeyEvent()))) {
                 return;
             }
 
@@ -133,7 +135,7 @@ public final class AutoEnchantClient {
         @SubscribeEvent
         public static void onKeyReleased(ScreenEvent.KeyReleased.Pre event) {
             if (!(event.getScreen() instanceof EnchantmentScreen)
-                    || !TOGGLE_UI_KEY.isActiveAndMatches(InputConstants.getKey(event.getKeyCode(), event.getScanCode()))) {
+                    || !TOGGLE_UI_KEY.isActiveAndMatches(InputConstants.getKey(event.getKeyEvent()))) {
                 return;
             }
             uiToggleHeld = false;
@@ -168,7 +170,7 @@ public final class AutoEnchantClient {
                 status = Component.translatable("autoenchant.status.pick_nonempty").withStyle(ChatFormatting.YELLOW);
                 return;
             }
-            if (!stack.getItem().isEnchantable(stack)) {
+            if (!stack.isEnchantable()) {
                 status = Component.translatable("autoenchant.status.pick_enchantable").withStyle(ChatFormatting.RED);
                 return;
             }
@@ -182,8 +184,8 @@ public final class AutoEnchantClient {
         }
 
         @SubscribeEvent
-        public static void onContainerBackground(ContainerScreenEvent.Render.Background event) {
-            if (!Config.SHOW_UI.get() || !(event.getContainerScreen() instanceof EnchantmentScreen screen)) {
+        public static void onContainerBackground(ScreenEvent.Render.Pre event) {
+            if (!Config.SHOW_UI.get() || !(event.getScreen() instanceof EnchantmentScreen screen)) {
                 return;
             }
 
@@ -221,7 +223,7 @@ public final class AutoEnchantClient {
             for (int i = 2; i < screen.getMenu().slots.size(); i++) {
                 Slot slot = screen.getMenu().getSlot(i);
                 ItemStack stack = slot.getItem();
-                if (!stack.isEmpty() && stack.getItem().isEnchantable(stack)) {
+                if (!stack.isEmpty() && stack.isEnchantable()) {
                     graphics.fill(slot.x - 1, slot.y - 1, slot.x + 17, slot.y, 0xFFDC9CFF);
                     graphics.fill(slot.x - 1, slot.y + 16, slot.x + 17, slot.y + 17, 0xFFDC9CFF);
                     graphics.fill(slot.x - 1, slot.y, slot.x, slot.y + 16, 0xFFDC9CFF);
@@ -248,30 +250,30 @@ public final class AutoEnchantClient {
             if (matches > 0 || !status.getString().isEmpty()) {
                 Item selected = selectedItem();
                 if (selected != null) {
-                    event.getGuiGraphics().renderItem(selected.getDefaultInstance(), centerX - 68, cardY + 3);
+                    event.getGuiGraphics().item(selected.getDefaultInstance(), centerX - 68, cardY + 3);
                 }
-                event.getGuiGraphics().drawString(minecraft.font, Component.literal("× " + matches),
+                event.getGuiGraphics().text(minecraft.font, Component.literal("× " + matches),
                         centerX - 48, cardY + 7, 0xFFE9D9FF);
-                event.getGuiGraphics().renderItem(Items.LAPIS_LAZULI.getDefaultInstance(), centerX + 12, cardY + 3);
-                event.getGuiGraphics().drawString(minecraft.font, Component.literal(lapis + " / " + required),
+                event.getGuiGraphics().item(Items.LAPIS_LAZULI.getDefaultInstance(), centerX + 12, cardY + 3);
+                event.getGuiGraphics().text(minecraft.font, Component.literal(lapis + " / " + required),
                         centerX + 32, cardY + 7, lapis < required ? 0xFFFFB84D : 0xFF8BE39B);
             }
 
             if (matches > 0 && lapis < required) {
                 Component warning = Component.translatable("autoenchant.warning.lapis", lapis, required, matches)
                         .withStyle(ChatFormatting.GOLD);
-                event.getGuiGraphics().drawCenteredString(minecraft.font, warning, centerX, cardY + 21, 0xFFFFAA00);
+                event.getGuiGraphics().centeredText(minecraft.font, warning, centerX, cardY + 21, 0xFFFFAA00);
             } else if (!status.getString().isEmpty()) {
-                event.getGuiGraphics().drawCenteredString(minecraft.font, status, centerX, cardY + 21, 0xFFE9D9FF);
+                event.getGuiGraphics().centeredText(minecraft.font, status, centerX, cardY + 21, 0xFFE9D9FF);
             }
 
             // The item itself is the picker button's icon; a tiny sparkle shows pick mode.
             if (itemButton != null) {
                 Item selected = selectedItem();
                 if (selected != null) {
-                    event.getGuiGraphics().renderItem(selected.getDefaultInstance(), itemButton.getX() + 8, itemButton.getY() + 2);
+                    event.getGuiGraphics().item(selected.getDefaultInstance(), itemButton.getX() + 8, itemButton.getY() + 2);
                 } else {
-                    event.getGuiGraphics().drawCenteredString(minecraft.font, "+",
+                    event.getGuiGraphics().centeredText(minecraft.font, "+",
                             itemButton.getX() + 16, itemButton.getY() + 6, 0xFFE9D9FF);
                 }
                 if (pickingItem) {
@@ -493,7 +495,7 @@ public final class AutoEnchantClient {
     }
 
     private static void quickMove(Minecraft minecraft, EnchantmentMenu menu, int slot) {
-        minecraft.gameMode.handleInventoryMouseClick(menu.containerId, slot, 0, ClickType.QUICK_MOVE, minecraft.player);
+        minecraft.gameMode.handleContainerInput(menu.containerId, slot, 0, ContainerInput.QUICK_MOVE, minecraft.player);
     }
 
     private static int findMatchingSlot(EnchantmentMenu menu, Item selected) {
@@ -545,11 +547,11 @@ public final class AutoEnchantClient {
 
     private static Item selectedItem() {
         String configured = Config.SELECTED_ITEM.get();
-        ResourceLocation id = ResourceLocation.tryParse(configured);
+        Identifier id = Identifier.tryParse(configured);
         if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
             return null;
         }
-        Item item = BuiltInRegistries.ITEM.get(id);
+        Item item = BuiltInRegistries.ITEM.getValue(id);
         return item == Items.AIR ? null : item;
     }
 
@@ -557,7 +559,7 @@ public final class AutoEnchantClient {
         Item item = selectedItem();
         return Tooltip.create(item == null
                 ? Component.translatable("autoenchant.tooltip.item")
-                : Component.translatable("autoenchant.tooltip.item_selected", item.getDescription()));
+                : Component.translatable("autoenchant.tooltip.item_selected", item.getDefaultInstance().getHoverName()));
     }
 
     private static Component levelButtonText() {

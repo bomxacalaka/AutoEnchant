@@ -1,4 +1,4 @@
-# AutoEnchant (NeoForge 1.21.1)
+# AutoEnchant (NeoForge 26.1.2)
 
 ![AutoEnchant logo](src/main/resources/autoenchant.png)
 
