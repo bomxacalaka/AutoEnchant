@@ -168,7 +168,7 @@ public final class AutoEnchantClient {
                 status = Component.translatable("autoenchant.status.pick_nonempty").withStyle(ChatFormatting.YELLOW);
                 return;
             }
-            if (!stack.getItem().isEnchantable(stack)) {
+            if (!stack.isEnchantable()) {
                 status = Component.translatable("autoenchant.status.pick_enchantable").withStyle(ChatFormatting.RED);
                 return;
             }
@@ -221,7 +221,7 @@ public final class AutoEnchantClient {
             for (int i = 2; i < screen.getMenu().slots.size(); i++) {
                 Slot slot = screen.getMenu().getSlot(i);
                 ItemStack stack = slot.getItem();
-                if (!stack.isEmpty() && stack.getItem().isEnchantable(stack)) {
+                if (!stack.isEmpty() && stack.isEnchantable()) {
                     graphics.fill(slot.x - 1, slot.y - 1, slot.x + 17, slot.y, 0xFFDC9CFF);
                     graphics.fill(slot.x - 1, slot.y + 16, slot.x + 17, slot.y + 17, 0xFFDC9CFF);
                     graphics.fill(slot.x - 1, slot.y, slot.x, slot.y + 16, 0xFFDC9CFF);
@@ -549,7 +549,7 @@ public final class AutoEnchantClient {
         if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
             return null;
         }
-        Item item = BuiltInRegistries.ITEM.get(id);
+        Item item = BuiltInRegistries.ITEM.getValue(id);
         return item == Items.AIR ? null : item;
     }
 
@@ -557,7 +557,7 @@ public final class AutoEnchantClient {
         Item item = selectedItem();
         return Tooltip.create(item == null
                 ? Component.translatable("autoenchant.tooltip.item")
-                : Component.translatable("autoenchant.tooltip.item_selected", item.getDescription()));
+                : Component.translatable("autoenchant.tooltip.item_selected", item.getDefaultInstance().getHoverName()));
     }
 
     private static Component levelButtonText() {
