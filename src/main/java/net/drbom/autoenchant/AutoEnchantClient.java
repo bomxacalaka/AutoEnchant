@@ -384,7 +384,7 @@ public final class AutoEnchantClient {
         }
 
         Minecraft minecraft = Minecraft.getInstance();
-        if (!(minecraft.screen instanceof EnchantmentScreen screen)
+        if (!(minecraft.gui.screen() instanceof EnchantmentScreen screen)
                 || screen != activeScreen
                 || minecraft.player == null
                 || minecraft.gameMode == null

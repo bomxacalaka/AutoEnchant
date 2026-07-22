@@ -1,4 +1,4 @@
-# AutoEnchant (NeoForge 26.1.2)
+# AutoEnchant (NeoForge 26.2)
 
 ![AutoEnchant logo](src/main/resources/autoenchant.png)
 
@@ -30,7 +30,7 @@ The mod JAR is written to `build/libs/`.
 
 ## In-game test checklist
 
-1. Start a NeoForge 1.21.1 client with the mod and enter a creative test world.
+1. Start a NeoForge 26.2 client with the mod and enter a creative test world.
 2. Place an enchantment table with 15 correctly spaced bookshelves.
 3. Give yourself XP, several identical unenchanted items, and lapis. Include an unrelated item too.
 4. Open the table, click the **item icon**, click the intended inventory item, choose offer **3**, and confirm the lapis warning matches `items × 3`.
