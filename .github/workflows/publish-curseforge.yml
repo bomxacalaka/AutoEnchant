@@ -1,0 +1,82 @@
+name: Publish to CurseForge
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    name: ${{ matrix.minecraft }} ${{ matrix.loader }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - minecraft: 1.20.1
+            loader: Forge
+            file: autoenchant-forge-1.20.1-1.0.0.jar
+            release_type: release
+          - minecraft: 1.20.4
+            loader: NeoForge
+            file: autoenchant-neoforge-1.20.4-1.0.0.jar
+            release_type: release
+          - minecraft: 1.20.6
+            loader: NeoForge
+            file: autoenchant-neoforge-1.20.6-1.0.0.jar
+            release_type: release
+          - minecraft: 1.21.1
+            loader: NeoForge
+            file: autoenchant-neoforge-1.21.1-1.0.0.jar
+            release_type: release
+          - minecraft: 1.21.4
+            loader: NeoForge
+            file: autoenchant-neoforge-1.21.4-1.0.0.jar
+            release_type: release
+          - minecraft: 1.21.8
+            loader: NeoForge
+            file: autoenchant-neoforge-1.21.8-1.0.0.jar
+            release_type: release
+          - minecraft: 1.21.11
+            loader: NeoForge
+            file: autoenchant-neoforge-1.21.11-1.0.0.jar
+            release_type: release
+          - minecraft: 26.1.2
+            loader: NeoForge
+            file: autoenchant-neoforge-26.1.2-1.0.0.jar
+            release_type: release
+          - minecraft: '26.2'
+            loader: NeoForge
+            file: autoenchant-neoforge-26.2-1.0.0.jar
+            release_type: beta
+
+    steps:
+      - name: Download tested release JAR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FILE_NAME: ${{ matrix.file }}
+        run: gh release download v1.0.0 --repo bomxacalaka/AutoEnchant --pattern "$FILE_NAME"
+
+      - name: Upload to CurseForge
+        env:
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          FILE_NAME: ${{ matrix.file }}
+          MINECRAFT_VERSION: ${{ matrix.minecraft }}
+          MOD_LOADER: ${{ matrix.loader }}
+          RELEASE_TYPE: ${{ matrix.release_type }}
+        run: |
+          metadata="$(jq -nc \
+            --arg changelog "Initial AutoEnchant release for Minecraft $MINECRAFT_VERSION." \
+            --arg displayName "AutoEnchant 1.0.0 — Minecraft $MINECRAFT_VERSION ($MOD_LOADER)" \
+            --arg minecraft "$MINECRAFT_VERSION" \
+            --arg loader "$MOD_LOADER" \
+            --arg releaseType "$RELEASE_TYPE" \
+            '{changelog: $changelog, changelogType: "markdown", displayName: $displayName, gameVersionNames: [$minecraft, $loader, "Client"], releaseType: $releaseType}')"
+
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "X-Api-Token: $CURSEFORGE_TOKEN" \
+            --form "metadata=$metadata" \
+            --form "file=@$FILE_NAME;type=application/java-archive" \
+            https://minecraft.curseforge.com/api/projects/1618849/upload-file
