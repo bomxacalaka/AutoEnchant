@@ -16,23 +16,21 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.ContainerScreenEvent;
-import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import net.neoforged.neoforge.client.event.ScreenEvent;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
-import net.neoforged.neoforge.client.settings.KeyConflictContext;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.client.event.ContainerScreenEvent;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.event.ScreenEvent;
+import net.minecraftforge.client.settings.KeyConflictContext;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.lwjgl.glfw.GLFW;
 
-@Mod(value = AutoEnchant.MODID, dist = Dist.CLIENT)
+@Mod(AutoEnchant.MODID)
 public final class AutoEnchantClient {
     private static final int BAR_WIDTH = 164;
     private static final int STATUS_WIDTH = 212;
@@ -57,11 +55,11 @@ public final class AutoEnchantClient {
     private static int resultWait;
     private static Component status = Component.empty();
 
-    public AutoEnchantClient(IEventBus modBus, ModContainer container) {
-        container.registerConfig(ModConfig.Type.CLIENT, Config.SPEC);
-        container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+    public AutoEnchantClient() {
+        IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+        net.minecraftforge.fml.ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, Config.SPEC);
         modBus.addListener(ClientEvents::onRegisterKeyMappings);
-        NeoForge.EVENT_BUS.register(ClientEvents.class);
+        MinecraftForge.EVENT_BUS.register(ClientEvents.class);
     }
 
     private static final class ClientEvents {
@@ -288,8 +286,10 @@ public final class AutoEnchantClient {
         }
 
         @SubscribeEvent
-        public static void onClientTick(ClientTickEvent.Post event) {
-            tickAutomation();
+        public static void onClientTick(TickEvent.ClientTickEvent event) {
+            if (event.phase == TickEvent.Phase.END) {
+                tickAutomation();
+            }
         }
     }
 
