@@ -22,6 +22,7 @@ AutoEnchant is a client-only mod that adds a small control bar to the vanilla en
 | 1.21.8 | NeoForge | 21 |
 | 1.21.11 | NeoForge | 21 |
 | 26.1.2 | NeoForge | 25 |
+| 26.2 | NeoForge (Beta) | 25 |
 
 Download the JAR matching your exact Minecraft version and loader from the [latest release](https://github.com/bomxacalaka/AutoEnchant/releases/latest).
 
