@@ -1,4 +1,4 @@
-# AutoEnchant (NeoForge 1.21.1)
+# AutoEnchant
 
 ![AutoEnchant logo](src/main/resources/autoenchant.png)
 
@@ -14,15 +14,15 @@ AutoEnchant is a client-only mod that adds a small control bar to the vanilla en
 
 | Minecraft | Loader | Java |
 |---|---|---:|
-| 1.20.1 | Forge | 17 |
-| 1.20.4 | NeoForge | 17 |
-| 1.20.6 | NeoForge | 21 |
-| 1.21.1 | NeoForge | 21 |
-| 1.21.4 | NeoForge | 21 |
-| 1.21.8 | NeoForge | 21 |
-| 1.21.11 | NeoForge | 21 |
-| 26.1.2 | NeoForge | 25 |
-| 26.2 | NeoForge (Beta) | 25 |
+| 1.20.1 | Forge, Fabric | 17 |
+| 1.20.4 | NeoForge, Fabric | 17 |
+| 1.20.6 | NeoForge, Fabric | 21 |
+| 1.21.1 | NeoForge, Fabric | 21 |
+| 1.21.4 | NeoForge, Fabric | 21 |
+| 1.21.8 | NeoForge, Fabric | 21 |
+| 1.21.11 | NeoForge, Fabric | 21 |
+| 26.1.2 | NeoForge, Fabric | 25 |
+| 26.2 | NeoForge (Beta), Fabric | 25 |
 
 Download the JAR matching your exact Minecraft version and loader from the [latest release](https://github.com/bomxacalaka/AutoEnchant/releases/latest).
 
@@ -46,7 +46,7 @@ The mod JAR is written to `build/libs/`.
 
 ## In-game test checklist
 
-1. Start a NeoForge 1.21.1 client with the mod and enter a creative test world.
+1. Start a supported Forge, NeoForge, or Fabric client with the matching mod JAR and enter a creative test world. Fabric builds also require Fabric API.
 2. Place an enchantment table with 15 correctly spaced bookshelves.
 3. Give yourself XP, several identical unenchanted items, and lapis. Include an unrelated item too.
 4. Open the table, click the **item icon**, click the intended inventory item, choose offer **3**, and confirm the lapis warning matches `items × 3`.

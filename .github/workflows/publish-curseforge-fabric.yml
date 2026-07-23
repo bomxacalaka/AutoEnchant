@@ -1,0 +1,71 @@
+name: Publish Fabric to CurseForge
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    name: Minecraft ${{ matrix.minecraft }} Fabric
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - minecraft: 1.20.1
+            java: Java 17
+            file: autoenchant-fabric-1.20.1-1.0.0.jar
+          - minecraft: 1.20.4
+            java: Java 17
+            file: autoenchant-fabric-1.20.4-1.0.0.jar
+          - minecraft: 1.20.6
+            java: Java 21
+            file: autoenchant-fabric-1.20.6-1.0.0.jar
+          - minecraft: 1.21.1
+            java: Java 21
+            file: autoenchant-fabric-1.21.1-1.0.0.jar
+          - minecraft: 1.21.4
+            java: Java 21
+            file: autoenchant-fabric-1.21.4-1.0.0.jar
+          - minecraft: 1.21.8
+            java: Java 21
+            file: autoenchant-fabric-1.21.8-1.0.0.jar
+          - minecraft: 1.21.11
+            java: Java 21
+            file: autoenchant-fabric-1.21.11-1.0.0.jar
+          - minecraft: 26.1.2
+            java: Java 25
+            file: autoenchant-fabric-26.1.2-1.0.0.jar
+          - minecraft: '26.2'
+            java: Java 25
+            file: autoenchant-fabric-26.2-1.0.0.jar
+
+    steps:
+      - name: Download tested release JAR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FILE_NAME: ${{ matrix.file }}
+        run: gh release download v1.0.0 --repo bomxacalaka/AutoEnchant --pattern "$FILE_NAME"
+
+      - name: Upload to CurseForge
+        env:
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          FILE_NAME: ${{ matrix.file }}
+          MINECRAFT_VERSION: ${{ matrix.minecraft }}
+          JAVA_VERSION: ${{ matrix.java }}
+        run: |
+          metadata="$(jq -nc \
+            --arg changelog "Fabric release of AutoEnchant 1.0.0 for Minecraft $MINECRAFT_VERSION. Requires Fabric API." \
+            --arg displayName "AutoEnchant Fabric $MINECRAFT_VERSION 1.0.0" \
+            --arg minecraft "$MINECRAFT_VERSION" \
+            --arg java "$JAVA_VERSION" \
+            '{changelog: $changelog, changelogType: "markdown", displayName: $displayName, gameVersionNames: [$minecraft, "Fabric", "Client", $java], releaseType: "release"}')"
+
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "X-Api-Token: $CURSEFORGE_TOKEN" \
+            --form "metadata=$metadata" \
+            --form "file=@$FILE_NAME;type=application/java-archive" \
+            https://minecraft.curseforge.com/api/projects/1618849/upload-file
