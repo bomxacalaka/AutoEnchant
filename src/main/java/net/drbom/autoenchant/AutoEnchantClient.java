@@ -3,7 +3,7 @@ package net.drbom.autoenchant;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
@@ -11,7 +11,9 @@ import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -19,8 +21,8 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.inventory.EnchantmentScreen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.EnchantmentMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
@@ -34,9 +36,11 @@ public final class AutoEnchantClient implements ClientModInitializer {
     private static final int STATUS_HEIGHT = 32;
     private static final int ACTION_DELAY_TICKS = 1;
     private static final int OFFER_WAIT_TICKS = 20;
+    private static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(
+            Identifier.fromNamespaceAndPath(AutoEnchant.MODID, "controls"));
     private static final KeyMapping TOGGLE_UI_KEY = new KeyMapping(
             "key.autoenchant.toggle_ui", InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_U, "key.categories.autoenchant");
+            GLFW.GLFW_KEY_U, KEY_CATEGORY);
 
     private static BackdropWidget backdrop;
     private static Button itemButton;
@@ -56,7 +60,7 @@ public final class AutoEnchantClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         Config.load();
-        KeyBindingHelper.registerKeyBinding(TOGGLE_UI_KEY);
+        KeyMappingHelper.registerKeyMapping(TOGGLE_UI_KEY);
         ScreenEvents.AFTER_INIT.register(ClientEvents::onScreenInit);
         ClientTickEvents.END_CLIENT_TICK.register(client -> tickAutomation());
     }
@@ -99,15 +103,15 @@ public final class AutoEnchantClient implements ClientModInitializer {
                     .tooltip(Tooltip.create(Component.translatable("autoenchant.tooltip.auto")))
                     .build();
 
-            Screens.getButtons(screen).add(backdrop);
-            Screens.getButtons(screen).add(itemButton);
-            Screens.getButtons(screen).add(levelButton);
-            Screens.getButtons(screen).add(runButton);
-            Screens.getButtons(screen).add(autoButton);
+            Screens.getWidgets(screen).add(backdrop);
+            Screens.getWidgets(screen).add(itemButton);
+            Screens.getWidgets(screen).add(levelButton);
+            Screens.getWidgets(screen).add(runButton);
+            Screens.getWidgets(screen).add(autoButton);
             ScreenKeyboardEvents.allowKeyPress(screen).register(ClientEvents::onKeyPressed);
             ScreenKeyboardEvents.allowKeyRelease(screen).register(ClientEvents::onKeyReleased);
             ScreenMouseEvents.allowMouseClick(screen).register(ClientEvents::onMousePressed);
-            ScreenEvents.afterRender(screen).register(ClientEvents::onRender);
+            ScreenEvents.afterExtract(screen).register(ClientEvents::onRender);
             setControlsVisible(Config.SHOW_UI.get());
 
             if (Config.AUTO_START.get() && selectedItem() != null) {
@@ -115,9 +119,8 @@ public final class AutoEnchantClient implements ClientModInitializer {
             }
         }
 
-        private static boolean onKeyPressed(net.minecraft.client.gui.screens.Screen screen,
-                                            int keyCode, int scanCode, int modifiers) {
-            if (!TOGGLE_UI_KEY.matches(keyCode, scanCode)) {
+        private static boolean onKeyPressed(net.minecraft.client.gui.screens.Screen screen, KeyEvent keyEvent) {
+            if (!TOGGLE_UI_KEY.matches(keyEvent)) {
                 return true;
             }
 
@@ -128,9 +131,8 @@ public final class AutoEnchantClient implements ClientModInitializer {
             return false;
         }
 
-        private static boolean onKeyReleased(net.minecraft.client.gui.screens.Screen screen,
-                                             int keyCode, int scanCode, int modifiers) {
-            if (!TOGGLE_UI_KEY.matches(keyCode, scanCode)) {
+        private static boolean onKeyReleased(net.minecraft.client.gui.screens.Screen screen, KeyEvent keyEvent) {
+            if (!TOGGLE_UI_KEY.matches(keyEvent)) {
                 return true;
             }
             uiToggleHeld = false;
@@ -138,22 +140,22 @@ public final class AutoEnchantClient implements ClientModInitializer {
         }
 
         private static boolean onMousePressed(net.minecraft.client.gui.screens.Screen current,
-                                              double mouseX, double mouseY, int button) {
+                                              MouseButtonEvent mouseEvent) {
             if (!Config.SHOW_UI.get() || !pickingItem || !(current instanceof EnchantmentScreen screen)) {
                 return true;
             }
 
-            if (button == 1) {
+            if (mouseEvent.button() == 1) {
                 pickingItem = false;
                 itemButton.setTooltip(itemTooltip());
                 status = Component.translatable("autoenchant.status.pick_cancelled").withStyle(ChatFormatting.YELLOW);
                 return false;
             }
-            if (button != 0) {
+            if (mouseEvent.button() != 0) {
                 return true;
             }
 
-            Slot slot = slotAt(screen, mouseX, mouseY);
+            Slot slot = slotAt(screen, mouseEvent.x(), mouseEvent.y());
             if (slot == null || slot.index < 2) {
                 return true;
             }
@@ -163,7 +165,7 @@ public final class AutoEnchantClient implements ClientModInitializer {
                 status = Component.translatable("autoenchant.status.pick_nonempty").withStyle(ChatFormatting.YELLOW);
                 return false;
             }
-            if (!stack.getItem().isEnchantable(stack)) {
+            if (!stack.isEnchantable()) {
                 status = Component.translatable("autoenchant.status.pick_enchantable").withStyle(ChatFormatting.RED);
                 return false;
             }
@@ -177,7 +179,7 @@ public final class AutoEnchantClient implements ClientModInitializer {
             return false;
         }
 
-        private static void onRender(net.minecraft.client.gui.screens.Screen rendered, GuiGraphics graphics,
+        private static void onRender(net.minecraft.client.gui.screens.Screen rendered, GuiGraphicsExtractor graphics,
                                      int mouseX, int mouseY, float tickDelta) {
             if (!Config.SHOW_UI.get() || !(rendered instanceof EnchantmentScreen screen)) {
                 return;
@@ -187,7 +189,7 @@ public final class AutoEnchantClient implements ClientModInitializer {
                 for (int i = 2; i < screen.getMenu().slots.size(); i++) {
                     Slot slot = screen.getMenu().getSlot(i);
                     ItemStack stack = slot.getItem();
-                    if (!stack.isEmpty() && stack.getItem().isEnchantable(stack)) {
+                    if (!stack.isEmpty() && stack.isEnchantable()) {
                         int x = screen.leftPos + slot.x;
                         int y = screen.topPos + slot.y;
                         graphics.fill(x - 1, y - 1, x + 17, y, 0xFFDC9CFF);
@@ -210,30 +212,30 @@ public final class AutoEnchantClient implements ClientModInitializer {
             if (matches > 0 || !status.getString().isEmpty()) {
                 Item selected = selectedItem();
                 if (selected != null) {
-                    graphics.renderItem(selected.getDefaultInstance(), centerX - 68, cardY + 3);
+                    graphics.item(selected.getDefaultInstance(), centerX - 68, cardY + 3);
                 }
-                graphics.drawString(minecraft.font, Component.literal("× " + matches),
+                graphics.text(minecraft.font, Component.literal("× " + matches),
                         centerX - 48, cardY + 7, 0xFFE9D9FF);
-                graphics.renderItem(Items.LAPIS_LAZULI.getDefaultInstance(), centerX + 12, cardY + 3);
-                graphics.drawString(minecraft.font, Component.literal(lapis + " / " + required),
+                graphics.item(Items.LAPIS_LAZULI.getDefaultInstance(), centerX + 12, cardY + 3);
+                graphics.text(minecraft.font, Component.literal(lapis + " / " + required),
                         centerX + 32, cardY + 7, lapis < required ? 0xFFFFB84D : 0xFF8BE39B);
             }
 
             if (matches > 0 && lapis < required) {
                 Component warning = Component.translatable("autoenchant.warning.lapis", lapis, required, matches)
                         .withStyle(ChatFormatting.GOLD);
-                graphics.drawCenteredString(minecraft.font, warning, centerX, cardY + 21, 0xFFFFAA00);
+                graphics.centeredText(minecraft.font, warning, centerX, cardY + 21, 0xFFFFAA00);
             } else if (!status.getString().isEmpty()) {
-                graphics.drawCenteredString(minecraft.font, status, centerX, cardY + 21, 0xFFE9D9FF);
+                graphics.centeredText(minecraft.font, status, centerX, cardY + 21, 0xFFE9D9FF);
             }
 
             // The item itself is the picker button's icon; a tiny sparkle shows pick mode.
             if (itemButton != null) {
                 Item selected = selectedItem();
                 if (selected != null) {
-                    graphics.renderItem(selected.getDefaultInstance(), itemButton.getX() + 8, itemButton.getY() + 2);
+                    graphics.item(selected.getDefaultInstance(), itemButton.getX() + 8, itemButton.getY() + 2);
                 } else {
-                    graphics.drawCenteredString(minecraft.font, "+",
+                    graphics.centeredText(minecraft.font, "+",
                             itemButton.getX() + 16, itemButton.getY() + 6, 0xFFE9D9FF);
                 }
                 if (pickingItem) {
@@ -273,7 +275,7 @@ public final class AutoEnchantClient implements ClientModInitializer {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
             graphics.fill(getX(), getY(), getX() + width, getY() + height, 0xE0181225);
             graphics.fill(getX(), getY(), getX() + width, getY() + 1, 0xFFCE9CFF);
             graphics.fill(getX(), getY() + height - 1, getX() + width, getY() + height, 0xFF7950A8);
@@ -388,7 +390,7 @@ public final class AutoEnchantClient implements ClientModInitializer {
         }
 
         Minecraft minecraft = Minecraft.getInstance();
-        if (!(minecraft.screen instanceof EnchantmentScreen screen)
+        if (!(minecraft.gui.screen() instanceof EnchantmentScreen screen)
                 || screen != activeScreen
                 || minecraft.player == null
                 || minecraft.gameMode == null
@@ -499,7 +501,7 @@ public final class AutoEnchantClient implements ClientModInitializer {
     }
 
     private static void quickMove(Minecraft minecraft, EnchantmentMenu menu, int slot) {
-        minecraft.gameMode.handleInventoryMouseClick(menu.containerId, slot, 0, ClickType.QUICK_MOVE, minecraft.player);
+        minecraft.gameMode.handleContainerInput(menu.containerId, slot, 0, ContainerInput.QUICK_MOVE, minecraft.player);
     }
 
     private static int findMatchingSlot(EnchantmentMenu menu, Item selected) {
@@ -551,11 +553,11 @@ public final class AutoEnchantClient implements ClientModInitializer {
 
     private static Item selectedItem() {
         String configured = Config.SELECTED_ITEM.get();
-        ResourceLocation id = ResourceLocation.tryParse(configured);
+        Identifier id = Identifier.tryParse(configured);
         if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
             return null;
         }
-        Item item = BuiltInRegistries.ITEM.get(id);
+        Item item = BuiltInRegistries.ITEM.getValue(id);
         return item == Items.AIR ? null : item;
     }
 
@@ -563,7 +565,7 @@ public final class AutoEnchantClient implements ClientModInitializer {
         Item item = selectedItem();
         return Tooltip.create(item == null
                 ? Component.translatable("autoenchant.tooltip.item")
-                : Component.translatable("autoenchant.tooltip.item_selected", item.getDescription()));
+                : Component.translatable("autoenchant.tooltip.item_selected", item.getDefaultInstance().getHoverName()));
     }
 
     private static Component levelButtonText() {
