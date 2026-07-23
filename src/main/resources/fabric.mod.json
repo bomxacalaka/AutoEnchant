@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "autoenchant",
+  "version": "${version}",
+  "name": "AutoEnchant",
+  "description": "Automatically enchants every matching item in your inventory as quickly as the server allows.",
+  "authors": [
+    "bomxacalaka"
+  ],
+  "license": "All Rights Reserved",
+  "icon": "autoenchant.png",
+  "environment": "client",
+  "accessWidener": "autoenchant.accesswidener",
+  "entrypoints": {
+    "client": [
+      "net.drbom.autoenchant.AutoEnchantClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "1.21.1",
+    "java": ">=21",
+    "fabric-api": ">=0.116.14+1.21.1"
+  }
+}
