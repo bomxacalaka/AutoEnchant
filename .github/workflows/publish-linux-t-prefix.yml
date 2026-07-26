@@ -1,0 +1,78 @@
+name: Publish Linux T Prefix on Opening Chat
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    name: Minecraft ${{ matrix.minecraft }} / NeoForge
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - minecraft: 1.21.1
+            tag: v1.1.3-mc1.21.1-neoforge
+            file: linux-t-prefix-on-opening-chat-1.1.3-mc1.21.1-neoforge.jar
+            sha256: 6fd54d6b656f6ba701989f174ede954cee02fde8f58986b0d81121451eb55b09
+            display_name: Linux T Prefix on Opening Chat 1.1.3 — NeoForge 1.21.1
+            changelog: |
+              Initial NeoForge 1.21.1 release.
+
+              - Ports RecursiveG's MIT-licensed MC-122477 workaround.
+              - Prevents the delayed `t` or `/` from reaching chat when it opens.
+              - Client-side only; no configuration required.
+              - Successfully tested in game.
+          - minecraft: '26.2'
+            tag: v1.1.3-mc26.2-neoforge
+            file: linux-t-prefix-on-opening-chat-1.1.3-mc26.2-neoforge.jar
+            sha256: 70f69d72c06d94bd84353e2761595ca8f3d2a8bfa9562e05358eb7b1574e83a1
+            display_name: Linux T Prefix on Opening Chat 1.1.3 — NeoForge 26.2
+            changelog: |
+              Initial NeoForge 26.2 release.
+
+              - Ports RecursiveG's MIT-licensed MC-122477 workaround.
+              - Prevents the delayed `t` or `/` from reaching chat when it opens.
+              - Client-side only; no configuration required.
+              - Successfully tested in game.
+
+    steps:
+      - name: Download verified GitHub release JAR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ matrix.tag }}
+          FILE_NAME: ${{ matrix.file }}
+        run: >
+          gh release download "$RELEASE_TAG"
+          --repo bomxacalaka/Mc122477Fix
+          --pattern "$FILE_NAME"
+
+      - name: Verify release checksum
+        env:
+          FILE_NAME: ${{ matrix.file }}
+          EXPECTED_SHA256: ${{ matrix.sha256 }}
+        run: echo "$EXPECTED_SHA256  $FILE_NAME" | sha256sum --check -
+
+      - name: Upload stable release to CurseForge
+        env:
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          FILE_NAME: ${{ matrix.file }}
+          MINECRAFT_VERSION: ${{ matrix.minecraft }}
+          DISPLAY_NAME: ${{ matrix.display_name }}
+          CHANGELOG: ${{ matrix.changelog }}
+        run: |
+          metadata="$(jq -nc \
+            --arg changelog "$CHANGELOG" \
+            --arg displayName "$DISPLAY_NAME" \
+            --arg minecraft "$MINECRAFT_VERSION" \
+            '{changelog: $changelog, changelogType: "markdown", displayName: $displayName, gameVersionNames: [$minecraft, "NeoForge", "Client"], releaseType: "release", isMarkedForManualRelease: false}')"
+
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "X-Api-Token: $CURSEFORGE_TOKEN" \
+            --form "metadata=$metadata" \
+            --form "file=@$FILE_NAME;type=application/java-archive" \
+            https://minecraft.curseforge.com/api/projects/1626142/upload-file
