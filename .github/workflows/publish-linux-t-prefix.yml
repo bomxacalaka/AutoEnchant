@@ -73,6 +73,6 @@ jobs:
           curl --fail-with-body --silent --show-error \
             --request POST \
             --header "X-Api-Token: $CURSEFORGE_TOKEN" \
-            --form "metadata=$metadata" \
+            --form-string "metadata=$metadata" \
             --form "file=@$FILE_NAME;type=application/java-archive" \
             https://minecraft.curseforge.com/api/projects/1626142/upload-file
